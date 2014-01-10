@@ -31,17 +31,36 @@ module Chartkick
       options = options.dup
       element_id = options.delete(:id) || "chart-#{@chartkick_chart_id += 1}"
       height = options.delete(:height) || "300px"
+      wrap = options.delete(:wrap)
 
-      html = <<HTML
+      html = <<-HTML
 <div id="#{ERB::Util.html_escape(element_id)}" style="height: #{ERB::Util.html_escape(height)}; text-align: center; color: #999; line-height: #{ERB::Util.html_escape(height)}; font-size: 14px; font-family: 'Lucida Grande', 'Lucida Sans Unicode', Verdana, Arial, Helvetica, sans-serif;">
   Loading...
 </div>
-HTML
-     js = <<JS
+      HTML
+      if wrap == :add_on_load
+      js = <<-JS
+<script type="text/javascript">
+  addOnloadEvent(function(){
+  new Chartkick.#{klass}(#{element_id.to_json}, #{data_source.to_json}, #{options.to_json});
+  });
+</script>
+        JS
+      elsif wrap == :window_on_load
+      js = <<-JS
+<script type="text/javascript">
+  window.onload = function(){
+  new Chartkick.#{klass}(#{element_id.to_json}, #{data_source.to_json}, #{options.to_json});
+  };
+</script>
+        JS
+     else
+      js = <<-JS
 <script type="text/javascript">
   new Chartkick.#{klass}(#{element_id.to_json}, #{data_source.to_json}, #{options.to_json});
 </script>
-JS
+        JS
+     end
       if options[:content_for]
         content_for(options[:content_for]) { js.respond_to?(:html_safe) ? js.html_safe : js }
       else
